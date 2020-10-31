@@ -28,7 +28,7 @@ slot_confirm() {
 		*)
 			# If you need to use slot 2 abort to change script conf
 			rm -rf ~/.yubico/
-			echo "Aborted."
+			echo "Aborted. Change script conf to slot 2 if needed."
 		        exit
 		        ;;
 	esac
@@ -121,10 +121,10 @@ mkdir -p ~/.yubico
 user_confirm
 KEYS_MADE=0
 
-# If you need to program new challenge-response keys
 echo
 read -r -p "Do you need to configure the Primary Yubikey device? [y/N] " response
 case "$response" in
+	# If you need to program new challenge-response keys
 	[yY][eE][sS]|[yY]) 
 		# Provsion key and map user
         	yubikey_setup_p
@@ -144,8 +144,8 @@ case "$response" in
 		esac
 esac
 
-# If you already have you challenge-response keys
 if [ $KEYS_MADE -eq 0 ]; then
+	# If you already have you challenge-response keys
 	echo
 	echo "Using Yubikey ${B}Slot $YUBIKEY_SLOT${N}.  ctrl+c to abort"
 	read -s -n 1 -p "Insert your ${B}Primary Yubikey${N} now."
@@ -165,8 +165,8 @@ if [ $KEYS_MADE -eq 0 ]; then
 	esac
 fi
 
-# Final system setup and overview
 if [ $KEYS_MADE -gt 0 ]; then
+	# Final system setup and overview
         set_pam_auth
 	echo
 	echo "${GREEN}${B}Your PAM config file:${N}"
