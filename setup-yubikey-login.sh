@@ -6,6 +6,8 @@ YUBIKEY_SLOT=1				# Select yubikey slot to be programmed as challenge-response
 CHALLENGE_DIR="/etc/yubico"		# Select where to store challenges mappings
 PAMMODE="sufficient"			# Select sufficient/required for pam mode
 PAMFILE="/etc/pam.d/common-auth"	# Where yubikey pam module will be enabled
+UDEVRULES="/etc/udev/rules.d"		# Where is udev rules
+UDEVFILE="70-u2f.rules"			# Udev security keys rule file name
 USERNAME=$USER				# User to setup pam login
 
 
@@ -13,6 +15,14 @@ USERNAME=$USER				# User to setup pam login
 sudo add-apt-repository -y ppa:yubico/stable
 sudo apt-get update
 sudo apt -y install libpam-yubico yubikey-personalization yubikey-manager
+
+# Setup udev rule for keys
+cd "$(dirname "$0")"
+if [ ! -f "$UDEVRULES/$UDEVFILE" ]; then
+	# Install udev keys rule
+	sudo cp $UDEVFILE $UDEVRULES
+	udevadm control -R
+fi
 
 # Functions
 GREEN=$(tput setaf 2)
