@@ -55,7 +55,7 @@ user_confirm() {
         	        ;;
 	        *)
                 	;;
-esac
+	esac
 }
 
 set_challenge_file() {
