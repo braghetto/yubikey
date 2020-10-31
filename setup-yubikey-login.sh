@@ -6,7 +6,7 @@ YUBIKEY_SLOT=1				# Select yubikey slot to be programmed as challenge-response
 CHALLENGE_DIR="/etc/yubico"		# Select where to store challenges mappings
 PAMMODE="sufficient"			# Select sufficient/required for pam mode
 PAMFILE="/etc/pam.d/common-auth"	# Where yubikey pam module will be enabled
-USERNAME=$USER				# User to setup pam login (root always be configured)
+USERNAME=$USER				# User to setup pam login
 
 
 # Installs
@@ -63,7 +63,7 @@ set_challenge_file() {
         CHALLENGE_FILE=$(find ~/.yubico -name 'challenge-*' -type f -printf "%f\n" | head -n 1)
         KEY_SERIAL=${CHALLENGE_FILE#challenge-*}
 	sudo mkdir -p $CHALLENGE_DIR
-        sudo cp -f ~/.yubico/$CHALLENGE_FILE $CHALLENGE_DIR/root-$KEY_SERIAL
+        #sudo cp -f ~/.yubico/$CHALLENGE_FILE $CHALLENGE_DIR/root-$KEY_SERIAL
         sudo cp -f ~/.yubico/$CHALLENGE_FILE $CHALLENGE_DIR/$USERNAME-$KEY_SERIAL
         sudo rm -rf ~/.yubico/*
 	sudo chown -R root:root $CHALLENGE_DIR
