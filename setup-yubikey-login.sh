@@ -21,7 +21,7 @@ cd "$(dirname "$0")"
 if [ ! -f "$UDEVRULES/$UDEVFILE" ]; then
 	# Install udev keys rule
 	sudo cp $UDEVFILE $UDEVRULES
-	udevadm control -R
+	sudo udevadm control -R
 fi
 
 # Functions
