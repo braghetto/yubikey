@@ -25,7 +25,7 @@ if [ -d ~/.yubico ]; then
 else
 	mkdir ~/.yubico
 fi
-mkdir -p $CHALLENGE_DIR
+sudo mkdir -p $CHALLENGE_DIR
 
 # Script config overview
 echo
@@ -51,9 +51,13 @@ if [ ! -d "$UDEVRULES" ]; then
 fi
 
 # Warn user about key slot used
-read -r -p "Using ${B}Yubikey's Slot $YUBIKEY_SLOT${N} for all keys! Proceed? [y/N] " response
+read -r -p "Using ${B}Yubikey's Slot $YUBIKEY_SLOT${N} for all keys! Proceed? [y/1/2/N] " response
 case "$response" in
 	[sS]|[yY])
+		;;
+	[12])
+		YUBIKEY_SLOT=$response
+		echo "Slot set to $YUBIKEY_SLOT."
 		;;
         *)
         	# If you need to use slot 2 abort to change script conf
@@ -187,6 +191,9 @@ if [ $KEYS_MADE -eq 0 ]; then
 	read -r -p "Do you have a ${B}Backup Yubikey${N} device? [y/N] " response
 	case "$response" in
 		[sS]|[yY])
+			echo
+		        read -s -n 1 -p "Insert your ${B}Backup Yubikey${N} now."
+		        echo
 			# Map key and user
 			set_challenge_file
 			KEYS_MADE=2
@@ -206,7 +213,7 @@ if [ $KEYS_MADE -gt 0 ]; then
 	echo "${GREEN}${B}User keys mapped:${N}"
 	sudo ls $CHALLENGE_DIR
 	echo
-	echo "${RED}Check PAM configuration file and its mapped keys, test access in other TTY before logout.{N}"
+	echo "${RED}Check PAM configuration file and its mapped keys, test access in other TTY before logout.${N}"
 	echo "${RED}${B}Risk of losing access!${N}"
 	echo
 	echo "${GREEN}${B}Successfully configured.${N}"
