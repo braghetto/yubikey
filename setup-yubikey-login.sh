@@ -12,7 +12,7 @@ USERNAME=$USER				# User to setup pam login
 # Installs
 sudo add-apt-repository -y ppa:yubico/stable 
 sudo apt-get update
-sudo apt -y install libpam-yubico yubikey-personalization yubikey-manager rename
+sudo apt -y install libpam-yubico yubikey-personalization yubikey-manager
 
 # Functions
 GREEN=$(tput setaf 2)
@@ -63,7 +63,7 @@ set_challenge_file() {
         CHALLENGE_FILE=$(find ~/.yubico -name 'challenge-*' -type f -printf "%f\n" | head -n 1)
         KEY_SERIAL=${CHALLENGE_FILE#challenge-*}
 	sudo mkdir -p $CHALLENGE_DIR
-        #sudo cp -f ~/.yubico/$CHALLENGE_FILE $CHALLENGE_DIR/root-$KEY_SERIAL
+        #sudo cp -f ~/.yubico/$CHALLENGE_FILE $CHALLENGE_DIR/root-$KEY_SERIAL		#enable just for first run, if you want.
         sudo cp -f ~/.yubico/$CHALLENGE_FILE $CHALLENGE_DIR/$USERNAME-$KEY_SERIAL
         sudo rm -rf ~/.yubico/*
 	sudo chown -R root:root $CHALLENGE_DIR
@@ -94,8 +94,8 @@ yubikey_setup_b() {
 
 set_pam_auth() {
 	CONFLINE="auth $PAMMODE pam_yubico.so mode=challenge-response chalresp_path=$CHALLENGE_DIR"
-	sudo cp -f $PAMFILE $PAMFILE.old
-	sudo sed -i "3a $CONFLINE" $PAMFILE
+	grep -q $CONFLINE $PAMFILE || sudo cp -f $PAMFILE $PAMFILE.old
+	grep -q $CONFLINE $PAMFILE || sudo sed -i "3a $CONFLINE" $PAMFILE
 }
 
 
