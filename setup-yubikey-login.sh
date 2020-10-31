@@ -10,7 +10,7 @@ USERNAME=$USER				# User to setup pam login
 
 
 # Installs
-sudo add-apt-repository -y ppa:yubico/stable 
+sudo add-apt-repository -y ppa:yubico/stable
 sudo apt-get update
 sudo apt -y install libpam-yubico yubikey-personalization yubikey-manager
 
@@ -20,11 +20,13 @@ RED=$(tput setaf 1)
 B=$(tput bold)
 N=$(tput sgr0)
 slot_confirm() {
+	# Advert user about yubikey slot to be writed
         read -r -p "Your ${B}Yubikey's Slot $YUBIKEY_SLOT${N} will be configured for challenge-response! Proceed? [y/N] " response
 	case "$response" in
-		[yY][eE][sS]|[yY]) 
+		[yY][eE][sS]|[yY])
 		        ;;
 		*)
+			# If you need to use slot 2 abort to change script conf
 			rm -rf ~/.yubico/
 			echo "Aborted."
 		        exit
@@ -33,11 +35,13 @@ slot_confirm() {
 }
 
 user_confirm() {
+	# Check username to be configured
 	if [ $USERNAME = "root" ]; then
 		echo "Do not execute this script as root!"
 		echo "Login the user you want to configure."
                 exit
         fi
+	# Its possible to specify other user than the actual
 	echo
 	read -r -p "Actual user is ${B}$USERNAME${N}. Set a different user? [y/N] " response
 	case "$response" in
@@ -59,12 +63,14 @@ user_confirm() {
 }
 
 set_challenge_file() {
+	# Obtains a challenge-response file from yubikey
         ykpamcfg -$YUBIKEY_SLOT -v
         CHALLENGE_FILE=$(find ~/.yubico -name 'challenge-*' -type f -printf "%f\n" | head -n 1)
+	# Map key and user
         KEY_SERIAL=${CHALLENGE_FILE#challenge-*}
 	sudo mkdir -p $CHALLENGE_DIR
-        #sudo cp -f ~/.yubico/$CHALLENGE_FILE $CHALLENGE_DIR/root-$KEY_SERIAL		#enable just for first run, if you want.
         sudo cp -f ~/.yubico/$CHALLENGE_FILE $CHALLENGE_DIR/$USERNAME-$KEY_SERIAL
+	# Cleanup and security
         sudo rm -rf ~/.yubico/*
 	sudo chown -R root:root $CHALLENGE_DIR
         sudo chmod 700 $CHALLENGE_DIR
@@ -72,48 +78,62 @@ set_challenge_file() {
 }
 
 yubikey_set_challenge() {
+	# Write challenge-response function to yubikey
 	sudo mkdir -p $CHALLENGE_DIR
 	ykpersonalize -$YUBIKEY_SLOT -ochal-resp -ochal-hmac -ohmac-lt64 -oserial-api-visible
 }
 
 yubikey_setup_p() {
+	# Primary key provisioning
 	echo
 	echo "Insert your ${B}Primary Yubikey${N} now."
 	slot_confirm
+	# New key provision
 	yubikey_set_challenge
+	# Key user mapping
 	set_challenge_file
 }
 
 yubikey_setup_b() {
+	# Backup key provisioning
 	echo
 	echo "Insert your ${B}Backup Yubikey${N} now."
 	slot_confirm
+	# New key provision
 	yubikey_set_challenge
+	# Key user mapping
 	set_challenge_file
 }
 
 set_pam_auth() {
+	# Configure system to login using yunikey challenge-response
 	CONFLINE="auth $PAMMODE pam_yubico.so mode=challenge-response chalresp_path=$CHALLENGE_DIR"
+	# Only runs if this conf line not exists in pam file
 	grep -q $CONFLINE $PAMFILE || sudo cp -f $PAMFILE $PAMFILE.old
 	grep -q $CONFLINE $PAMFILE || sudo sed -i "3a $CONFLINE" $PAMFILE
 }
 
 
 
-# Entry Point
+### Entry Point
+
 mkdir -p ~/.yubico
 user_confirm
 KEYS_MADE=0
+
+# If you need to program new challenge-response keys
 echo
 read -r -p "Do you need to configure the Primary Yubikey device? [y/N] " response
 case "$response" in
 	[yY][eE][sS]|[yY]) 
+		# Provsion key and map user
         	yubikey_setup_p
 		KEYS_MADE=1
 		echo
 		read -r -p "Do you need to configure the Backup Yubikey device? [y/N] " response
 		case "$response" in
 			[yY][eE][sS]|[yY])
+				# Provision key and map user
 				yubikey_setup_b
 				KEYS_MADE=2
 				;;
@@ -124,16 +144,19 @@ case "$response" in
 		esac
 esac
 
+# If you already have you challenge-response keys
 if [ $KEYS_MADE -eq 0 ]; then
 	echo
-	echo "Using Yubikey Slot $YUBIKEY_SLOT."
+	echo "Using Yubikey ${B}Slot $YUBIKEY_SLOT${N}.  ctrl+c to abort"
 	read -s -n 1 -p "Insert your ${B}Primary Yubikey${N} now."
+	# Map key and user
 	set_challenge_file
 	KEYS_MADE=1
 	echo
 	read -r -p "Do you have a ${B}Backup Yubikey${N} device? [y/N] " response
 	case "$response" in
-		[yY][eE][sS]|[yY]) 
+		[yY][eE][sS]|[yY])
+			# Map key and user
 			set_challenge_file
 			KEYS_MADE=2
 			;;
@@ -142,6 +165,7 @@ if [ $KEYS_MADE -eq 0 ]; then
 	esac
 fi
 
+# Final system setup and overview
 if [ $KEYS_MADE -gt 0 ]; then
         set_pam_auth
 	echo
